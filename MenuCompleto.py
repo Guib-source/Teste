@@ -2,6 +2,23 @@ import tkinter as tk
 from tkinter import messagebox
 import main
 
+# Function to create the initial menu
+def create_initial_menu():
+    menu_root = tk.Tk()
+    menu_root.title("Escolha o Tipo de Cotação")
+
+    # Centering the window on the screen
+    window_width, window_height = 300, 200
+    screen_width, screen_height = menu_root.winfo_screenwidth(), menu_root.winfo_screenheight()
+    position_top, position_right = (screen_height - window_height) // 2, (screen_width - window_width) // 2
+    menu_root.geometry(f'{window_width}x{window_height}+{position_right}+{position_top}')
+    
+    tk.Label(menu_root, text="Escolha o tipo de cotação:").pack(pady=20)
+    tk.Button(menu_root, text="Cotação de Voo", command=lambda: [menu_root.destroy(), create_flight_window()]).pack(pady=10)
+    tk.Button(menu_root, text="Cotação de Ônibus", command=lambda: [menu_root.destroy(), create_bus_window()]).pack(pady=10)
+
+    menu_root.mainloop()
+
 # Function to format the date input
 def format_date(event):
     text = event.widget.get()
@@ -67,7 +84,7 @@ def atualizar_dropdowns():
         for aeroporto in main.Aeroporto:
             label = f'{aeroporto["Cidade"]} ({aeroporto["IATA"]})'
             menu.add_command(label=label, command=lambda value=label: var.set(value))
-
+            
 # Function to create the main window for flight quotation
 def create_flight_window():
     global root
@@ -152,3 +169,84 @@ def create_flight_window():
     # Creating and placing the text widget for preview
     text_preview = tk.Text(root, height=15, width=50)
     text_preview.grid(row=6, column=0, columnspan=4, sticky="nsew")
+    
+    # Button to go back to the start menu
+    tk.Button(root, text="Voltar ao Menu Inicial", command=lambda: [root.destroy(), create_initial_menu()]).grid(row=7, column=0, columnspan=4, sticky="nsew")
+    
+# Function to create the main window for bus quotation
+def create_bus_window():
+    global root
+    root = tk.Tk()
+    root.title("Gerador de Cotação")
+
+    # Centering the window on the screen
+    window_width, window_height = 525, 600
+    screen_width, screen_height = root.winfo_screenwidth(), root.winfo_screenheight()
+    position_top, position_right = (screen_height - window_height) // 2, (screen_width - window_width) // 2
+    root.geometry(f'{window_width}x{window_height}+{position_right}+{position_top}')
+
+    # Configuring grid to expand and fill space
+    for i in range(4):
+        root.grid_columnconfigure(i, weight=1)
+    root.grid_rowconfigure(6, weight=1)
+
+    # Creating frames for better organization
+    frame_ida = tk.LabelFrame(root, text="Ida")
+    frame_ida.grid(row=1, column=0, padx=10, pady=10, sticky="nsew", columnspan=2)
+
+    frame_volta = tk.LabelFrame(root, text="Volta")
+    frame_volta.grid(row=1, column=2, padx=10, pady=10, sticky="nsew", columnspan=2)
+
+    # Helper function to create labeled entries
+    def create_labeled_entry(frame, label_text, row, column, bind_func=None):
+        tk.Label(frame, text=label_text).grid(row=row, column=column, sticky="e")
+        entry = tk.Entry(frame)
+        entry.grid(row=row, column=column + 1, sticky="w")
+        if bind_func:
+            entry.bind('<KeyRelease>', bind_func)
+        return entry
+
+    # Creating and placing the input fields for "Ida"
+    global entry_data_ida, entry_hora_saida_ida, entry_hora_chegada_ida, entry_data_volta, entry_hora_saida_volta, entry_hora_chegada_volta, entry_valor, var_origem, var_somente_ida, var_destino, text_preview
+    entry_data_ida = create_labeled_entry(frame_ida, "Data Ida:", 0, 0, format_date)
+    entry_hora_saida_ida = create_labeled_entry(frame_ida, "Saída:", 1, 0, format_time)
+    entry_hora_chegada_ida = create_labeled_entry(frame_ida, "Chegada:", 2, 0, format_time)
+
+    # Creating and placing the input fields for "Volta"
+    entry_data_volta = create_labeled_entry(frame_volta, "Data Volta:", 0, 0, format_date)
+    entry_hora_saida_volta = create_labeled_entry(frame_volta, "Saída:", 1, 0, format_time)
+    entry_hora_chegada_volta = create_labeled_entry(frame_volta, "Chegada:", 2, 0, format_time)
+
+    # Creating and placing the input field for "Valor"
+    entry_valor = create_labeled_entry(root, "Valor:", 2, 0, lambda _: update_preview())
+
+    # Creating and placing the checkbuttons
+    var_somente_ida = tk.BooleanVar()
+    check_somente_ida = tk.Checkbutton(root, text="Somente Ida", variable=var_somente_ida, command=update_preview)
+    check_somente_ida.grid(row=3, column=0, columnspan=2, sticky="nsew")
+
+    # Creating and placing the input fields for "Origem" and "Destino"
+    tk.Label(root, text="Origem:").grid(row=0, column=0, sticky="e")
+    var_origem = tk.StringVar()
+    entry_origem = tk.Entry(root, textvariable=var_origem)
+    entry_origem.grid(row=0, column=1, sticky="w")
+    entry_origem.bind('<KeyRelease>', lambda _: update_preview())
+
+    tk.Label(root, text="Destino:").grid(row=0, column=2, sticky="e")
+    var_destino = tk.StringVar()
+    entry_destino = tk.Entry(root, textvariable=var_destino)
+    entry_destino.grid(row=0, column=3, sticky="w")
+    entry_destino.bind('<KeyRelease>', lambda _: update_preview())
+
+    # Creating and placing the buttons
+    tk.Button(root, text="Gerar e Copiar Cotação", command=gerar_e_copiar_cotacao).grid(row=5, column=0, columnspan=2, sticky="nsew")
+    
+    # Creating and placing the text widget for preview
+    text_preview = tk.Text(root, height=15, width=50)
+    text_preview.grid(row=6, column=0, columnspan=4, sticky="nsew")
+    
+    # Button to go back to the start menu
+    tk.Button(root, text="Voltar ao Menu Inicial", command=lambda: [root.destroy(), create_initial_menu()]).grid(row=7, column=0, columnspan=4, sticky="nsew")
+
+# Start the application with the initial menu
+create_initial_menu()
